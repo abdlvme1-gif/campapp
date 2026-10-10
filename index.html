@@ -1,0 +1,78 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1f6f5c"><link rel="manifest" href="manifest.json"><link rel="icon" href="icon-192.png"><title>سجل المساعدات</title>
+<style>
+:root{--bg:#f3f6f4;--ink:#17302b;--mu:#62746f;--ln:#d9e2de;--mn:#1f6f5c;--m2:#e3f1ec;--wr:#b3402a;--am:#fff4d6}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.6;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+header{background:var(--mn);color:#fff;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:5}
+#st{font-size:12px;background:#ffffff26;padding:3px 9px;border-radius:99px}
+main{max-width:720px;margin:0 auto;padding:12px}
+input,select,textarea{width:100%;font:inherit;padding:11px;border:1px solid var(--ln);border-radius:8px;background:#fff;color:var(--ink);margin-bottom:8px}
+label{font-size:13px;color:var(--mu);display:block}
+button{font:inherit;padding:10px 16px;border:0;border-radius:8px;background:var(--mn);color:#fff}
+button.g{background:var(--m2);color:var(--mn)}button.d{background:#fbeae6;color:var(--wr)}
+.it{background:#fff;border:1px solid var(--ln);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.it small{color:var(--mu)}.it.p{background:var(--am)}.cd{background:#fff;border:1px solid var(--ln);border-radius:10px;padding:12px;margin-bottom:10px}
+.k{display:flex;gap:8px}.k>div{flex:1;background:var(--m2);border-radius:10px;padding:8px;text-align:center}.k b{display:block;font-size:20px;color:var(--mn)}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:6px;border-bottom:1px solid var(--ln);text-align:right}
+nav{position:fixed;bottom:0;inset-inline:0;background:#fff;border-top:1px solid var(--ln);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;color:var(--mu);border-radius:0;padding:12px 0}nav button.on{color:var(--mn);font-weight:700}
+#fab{position:fixed;bottom:calc(66px + env(safe-area-inset-bottom));left:16px;width:56px;height:56px;border-radius:50%;font-size:30px;padding:0;box-shadow:0 3px 10px #0004}
+#fm{position:fixed;inset:0;background:var(--bg);overflow:auto;z-index:10;padding:12px;padding-top:calc(12px + env(safe-area-inset-top))}
+#tt{position:fixed;bottom:130px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:8px 16px;border-radius:8px;display:none;z-index:20}
+</style></head><body>
+<header><b>سجل المساعدات</b><span id="st"></span></header><main id="m"></main>
+<button id="fab" onclick="openF()">+</button>
+<nav><button id="n_list" onclick="go('list')">السجل</button><button id="n_rep" onclick="go('rep')">التقارير</button><button id="n_set" onclick="go('set')">الإعدادات</button></nav>
+<div id="fm" hidden></div><div id="tt"></div><div id="dl"></div>
+<script>
+var $=i=>document.getElementById(i),g=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}},s=(k,v)=>localStorage.setItem(k,JSON.stringify(v)),
+R=g("R",[]),Q=g("Q",[]),C=g("C",{url:"",key:""}),V="list",F={q:"",sec:""},P={sec:"",a:"",b:""},busy=false;
+var esc=t=>String(t==null?"":t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+var AR=d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d),norm=t=>String(t||"").replace(/[٠-٩]/g,AR).replace(/\D/g,""),num=t=>parseFloat(String(t||"").replace(/[٠-٩]/g,AR))||0,today=()=>new Date().toLocaleDateString("en-CA");
+function toast(t){var e=$("tt");e.textContent=t;e.style.display="block";setTimeout(()=>e.style.display="none",2500)}
+function ap(l,o){if(o.op==="del")return l.filter(r=>r.uid!==o.uid);var i=l.findIndex(r=>r.uid===o.rec.uid);if(i<0)l.unshift(o.rec);else l[i]=o.rec;return l}
+function push(o){Q.push(o);R=ap(R,o);s("Q",Q);s("R",R);draw();sync()}
+async function sync(){
+ if(!C.url||!navigator.onLine||busy)return;busy=true;
+ try{var ops=Q.slice(),r=await fetch(C.url,{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify({key:C.key,ops:ops})}),j=await r.json();
+  if(!j.ok){toast("المفتاح غير صحيح");throw 0}
+  Q=Q.slice(ops.length);R=j.records;Q.forEach(o=>R=ap(R,o));s("Q",Q);s("R",R);if(ops.length)toast("تم إرسال "+ops.length+" تسجيل")}catch(e){}
+ busy=false;draw()}
+var FL=[["name","الاسم","text"],["id","رقم الهوية (اختياري)","tel"],["phone","الجوال (اختياري)","tel"],["section","القسم / الجهة المستفيدة (مثال: مخيم 1)","text","dsec"],["benefit","الاستفادة (مثال: طرد غذائي)","text","dben"],["qty","الكمية","number"],["value","القيمة التقديرية (السعر الإجمالي)","number"],["donor","الجهة المقدّمة للمساعدة","text","ddon"],["date","التاريخ","date"],["notes","ملاحظات","textarea"]];
+function uniq(k){return [...new Set(R.map(r=>r[k]).filter(Boolean))].sort()}
+function openF(u){
+ var r=R.find(x=>x.uid===u)||{date:today(),qty:1},h='<h3>'+(u?"تعديل سجل":"تسجيل جديد")+'</h3><p style="color:var(--mu);font-size:13px">اكتب الاسم أو الهوية على الأقل، والباقي اختياري.</p>';
+ FL.forEach(f=>{h+='<label>'+f[1]+'</label>'+(f[2]=="textarea"?'<textarea id="f_'+f[0]+'">'+esc(r[f[0]])+'</textarea>':'<input id="f_'+f[0]+'" type="'+f[2]+'" '+(f[3]?'list="'+f[3]+'" ':'')+(f[2]=="number"?'inputmode="decimal" ':'')+'value="'+esc(r[f[0]])+'">')});
+ h+='<div class="k"><button style="flex:2" onclick="save(\''+(u||"")+'\')">حفظ</button><button class="g" onclick="$(\'fm\').hidden=true">إلغاء</button>'+(u?'<button class="d" onclick="del(\''+u+'\')">حذف</button>':'')+'</div><br><br>';
+ $("fm").innerHTML=h;$("fm").hidden=false}
+function save(u){
+ var r={uid:u||Date.now().toString(36)+Math.random().toString(36).slice(2,7)};FL.forEach(f=>r[f[0]]=$("f_"+f[0]).value.trim());r.id=norm(r.id);
+ if(!r.name&&!r.id){alert("اكتب الاسم أو رقم الهوية");return}
+ $("fm").hidden=true;push({op:"up",rec:r});toast(navigator.onLine&&C.url?"تم الحفظ":"انحفظ على الجهاز، وبينرسل لما يرجع النت")}
+function del(u){if(confirm("متأكد بدك تحذف هذا السجل؟")){$("fm").hidden=true;push({op:"del",uid:u})}}
+function go(v){V=v;draw()}
+function opts(l,sel){return '<option value="">الكل</option>'+l.map(x=>'<option'+(x===sel?' selected':'')+'>'+esc(x)+'</option>').join("")}
+function list(){
+ var q=F.q.trim(),nq=norm(q),l=R.filter(r=>(!F.sec||r.section===F.sec)&&(!q||(r.name||"").indexOf(q)>-1||(nq&&(r.id||"").indexOf(nq)>-1)));
+ l.sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0);var pend=new Set(Q.map(o=>o.uid||o.rec.uid)),tv=l.reduce((a,r)=>a+num(r.value),0);
+ $("rs").innerHTML='<p style="color:var(--mu)">'+l.length+' سجل · القيمة التقديرية: '+tv.toLocaleString("en")+'</p>'+l.slice(0,150).map(r=>'<div class="it'+(pend.has(r.uid)?' p':'')+'" onclick="openF(\''+r.uid+'\')"><b>'+esc(r.name||"بدون اسم")+'</b>'+(pend.has(r.uid)?' ⏳':'')+'<div>'+esc(r.benefit)+(r.qty?' × '+esc(r.qty):'')+(r.value?' · '+esc(r.value):'')+'</div><small>'+esc(r.date)+(r.section?' · '+esc(r.section):'')+(r.id?' · '+esc(r.id):'')+'</small>'+(r.notes?'<div><small>'+esc(r.notes)+'</small></div>':'')+'</div>').join("")||'<p class="it">لا توجد سجلات</p>'}
+function rep(){
+ var l=R.filter(r=>(!P.sec||r.section===P.sec)&&(!P.a||r.date>=P.a)&&(!P.b||r.date<=P.b)),by=(k)=>{var m={};l.forEach(r=>{var x=m[r[k]||"غير محدد"]=m[r[k]||"غير محدد"]||{n:0,v:0};x.n++;x.v+=num(r.value)});return Object.keys(m).map(a=>'<tr><td>'+esc(a)+'</td><td>'+m[a].n+'</td><td>'+m[a].v.toLocaleString("en")+'</td></tr>').join("")},
+ ppl=new Set(l.map(r=>r.id||r.name)).size;
+ return '<div class="cd"><label>القسم / الجهة</label><select onchange="P.sec=this.value;draw()">'+opts(uniq("section"),P.sec)+'</select><div class="k"><div><label>من</label><input type="date" value="'+P.a+'" onchange="P.a=this.value;draw()"></div><div><label>إلى</label><input type="date" value="'+P.b+'" onchange="P.b=this.value;draw()"></div></div></div>'
+ +'<div class="k"><div><b>'+l.length+'</b>استفادة</div><div><b>'+ppl+'</b>شخص</div><div><b>'+l.reduce((a,r)=>a+num(r.value),0).toLocaleString("en")+'</b>القيمة</div></div><br>'
+ +'<div class="cd"><b>حسب نوع الاستفادة</b><table><tr><th></th><th>العدد</th><th>القيمة</th></tr>'+by("benefit")+'</table></div>'
+ +'<div class="cd"><b>حسب القسم / الجهة</b><table><tr><th></th><th>العدد</th><th>القيمة</th></tr>'+by("section")+'</table></div>'
+ +'<div class="cd"><b>حسب الجهة المقدّمة</b><table><tr><th></th><th>العدد</th><th>القيمة</th></tr>'+by("donor")+'</table></div>'}
+function draw(){
+ $("st").textContent=(navigator.onLine?"متصل":"بدون نت")+(Q.length?" · ⏳"+Q.length:"");
+ ["list","rep","set"].forEach(v=>$("n_"+v).className=V===v?"on":"");$("fab").style.display=V==="set"?"none":"";
+ $("dl").innerHTML='<datalist id="dsec">'+uniq("section").map(x=>'<option>'+esc(x)+'</option>').join("")+'</datalist><datalist id="dben">'+uniq("benefit").map(x=>'<option>'+esc(x)+'</option>').join("")+'</datalist><datalist id="ddon">'+uniq("donor").map(x=>'<option>'+esc(x)+'</option>').join("")+'</datalist>';
+ if(V==="list"){$("m").innerHTML='<input placeholder="ابحث بالاسم أو الهوية" value="'+esc(F.q)+'" oninput="F.q=this.value;list()"><select onchange="F.sec=this.value;list()">'+opts(uniq("section"),F.sec)+'</select><div id="rs"></div>';list()}
+ else if(V==="rep")$("m").innerHTML=rep();
+ else $("m").innerHTML='<div class="cd"><label>رابط السكربت (Web app URL)</label><input id="cu" value="'+esc(C.url)+'" dir="ltr"><label>المفتاح</label><input id="ck" value="'+esc(C.key)+'" dir="ltr"><button onclick="C={url:$(\'cu\').value.trim(),key:$(\'ck\').value.trim()};s(\'C\',C);sync();toast(\'تم الحفظ\')">حفظ ومزامنة</button></div><div class="cd">السجلات على الجهاز: '+R.length+'<br>بانتظار الإرسال: '+Q.length+'<br><br><button class="g" onclick="sync()">مزامنة الآن</button></div>'}
+addEventListener("online",()=>{draw();sync()});addEventListener("offline",draw);setInterval(sync,20000);
+if(!C.url)V="set";draw();sync();
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");
+</script></body></html>
